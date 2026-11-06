@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>아기 수유 스케줄 계산기</title>
+  <style>
+    :root {
+      --bg-primary: #FAF7F2;
+      --card-bg: #FFFFFF;
+      --card-border: #EFE8DE;
+      --accent-warm: #E27D60;
+      --accent-soft: #F9EBE6;
+      --accent-gold: #F59E0B;
+      --text-main: #2D3748;
+      --text-sub: #718096;
+      --text-light: #A0AEC0;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 4px 14px rgba(226, 125, 96, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Pretendard", "Segoe UI", sans-serif;
+      line-height: 1.5;
+      padding: 16px 14px 40px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 헤더 */
+    header {
+      text-align: center;
+      padding: 8px 4px 4px;
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: var(--accent-soft);
+      color: var(--accent-warm);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1A202C;
+      letter-spacing: -0.5px;
+    }
+
+    p.subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 3px;
+    }
+
+    /* 설정 섹션 카드 */
+    .setup-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 18px 16px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .time-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .input-box {
+      background: #FDFBF8;
+      border: 1px solid #EFE8DE;
+      border-radius: var(--radius-md);
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #554A42;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dot-first { width: 7px; height: 7px; border-radius: 50%; background: #E27D60; display: inline-block; }
+    .dot-last { width: 7px; height: 7px; border-radius: 50%; background: #4A5568; display: inline-block; }
+
+    .select-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dropdown {
+      flex: 1;
+      height: 44px; /* 모바일 터치 최적화 규격 */
+      background: #FFFFFF;
+      border: 1.5px solid #E2D9CF;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 700;
+      color: #2D3748;
+      padding: 0 4px;
+      text-align: center;
+      outline: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .dropdown:focus {
+      border-color: var(--accent-warm);
+    }
+
+    .colon {
+      font-weight: 800;
+      color: #A0AEC0;
+      font-size: 16px;
+    }
+
+    /* 모드 전환 탭 */
+    .tab-group {
+      background: #F1ECE4;
+      padding: 4px;
+      border-radius: var(--radius-md);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      height: 42px;
+      border: none;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: #FFFFFF;
+      color: var(--accent-warm);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    /* 요약 대시보드 */
+    .summary-card {
+      background: linear-gradient(135deg, #FFF9F5 0%, #FFF4ED 100%);
+      border: 1px solid #FCDFD3;
+      border-radius: var(--radius-md);
+      padding: 14px 10px;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .summary-item {
+      flex: 1;
+    }
+
+    .summary-item:not(:last-child) {
+      border-right: 1px solid #F5D3C4;
+    }
+
+    .summary-label {
+      font-size: 11px;
+      color: #8C7870;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .summary-value {
+      font-size: 17px;
+      font-weight: 800;
+      color: #4A332D;
+    }
+
+    /* 타임라인 카드 리스트 */
+    .timeline-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .timeline-title-row h2 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #2D3748;
+    }
+
+    .badge-info {
+      font-size: 11px;
+      font-weight: 700;
+      background: #EFE8DE;
+      color: #6C5E53;
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .feed-card {
+      background: #FFFFFF;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 13px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .feed-card.highlight {
+      background: #FFFAF8;
+      border-color: #F8D5C8;
+    }
+
+    .feed-left {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .round-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #F4EBE2;
+      color: #6B5749;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .feed-card.highlight .round-num {
+      background: var(--accent-warm);
+      color: #FFFFFF;
+    }
+
+    .feed-details {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .feed-time-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .feed-time {
+      font-size: 17px;
+      font-weight: 800;
+      color: #1A202C;
+      letter-spacing: -0.2px;
+    }
+
+    .feed-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4A5568;
+    }
+
+    .feed-interval {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-warm);
+      background: var(--accent-soft);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .feed-desc {
+      font-size: 11px;
+      color: #718096;
+    }
+
+    .feed-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .feed-amount {
+      font-size: 17px;
+      font-weight: 900;
+      color: #2D3748;
+    }
+
+    .feed-amount span {
+      font-size: 12px;
+      font-weight: 700;
+      color: #718096;
+    }
+
+    .feed-spoons {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-warm);
+    }
+
+    /* 액션 버튼 */
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn {
+      height: 44px;
+      border: 1px solid #E2D9CF;
+      background: #FFFFFF;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 700;
+      color: #4A5568;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+      background: #F8F5F0;
+    }
+
+    .btn-primary {
+      background: var(--accent-warm);
+      border-color: var(--accent-warm);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:active {
+      background: #D46A4D;
+    }
+
+    /* 안내 박스 */
+    .info-box {
+      background: #FAF5EE;
+      border: 1px solid #EAE0D3;
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-size: 12px;
+      color: #5D5248;
+      line-height: 1.6;
+    }
+
+    .info-box-title {
+      font-weight: 800;
+      color: #463B32;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .info-box ul {
+      padding-left: 18px;
+    }
+
+    .info-box li {
+      margin-bottom: 3px;
+    }
+
+    /* 모달 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 360px;
+      border-radius: var(--radius-lg);
+      padding: 20px 18px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #2D3748;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      font-weight: 700;
+      color: #A0AEC0;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .temp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .temp-table th {
+      background: #FFF2EC;
+      color: #8A4B37;
+      padding: 8px 4px;
+      font-weight: 700;
+      border-bottom: 1px solid #FCDFD3;
+    }
+
+    .temp-table td {
+      padding: 9px 4px;
+      border-bottom: 1px solid #F0EAE2;
+      font-weight: 600;
+      color: #4A5568;
+    }
+
+    .temp-hot { color: #E53E3E; font-weight: 700; }
+    .temp-warm { color: #3182CE; font-weight: 700; }
+
+    /* 토스트 알림 */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(33, 37, 41, 0.92);
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- 헤더 -->
+    <header>
+      <span class="header-badge">🍼 80~90일 아기 맞춤</span>
+      <h1>수유 스케줄 자동 계산기</h1>
+      <p class="subtitle">첫수와 막수를 선택하면 최적의 시간표가 완성됩니다</p>
+    </header>
+
+    <!-- 시간 입력 및 모드 설정 -->
+    <section class="setup-card">
+      <div class="time-inputs-grid">
+        <!-- 첫수 -->
+        <div class="input-box">
+          <label class="input-title">
+            <span class="dot-first"></span>
+            첫수 시간 (아침)
+          </label>
+          <div class="select-group">
+            <select id="firstH" class="dropdown" onchange="calculateSchedule()" aria-label="첫수 시">
+              <option value="05">오전 05시</option>
+              <option value="06">오전 06시</option>
+              <option value="07">오전 07시</option>
+              <option value="08" selected>오전 08시</option>
+              <option value="09">오전 09시</option>
+              <option value="10">오전 10시</option>
+              <option value="11">오전 11시</option>
+              <option value="12">낮 12시</option>
+            </select>
+            <span class="colon">:</span>
+            <select id="firstM" class="dropdown" onchange="calculateSchedule()" aria-label="첫수 분">
+              <option value="0">00분</option>
+              <option value="10">10분</option>
+              <option value="20">20분</option>
+              <option value="30" selected>30분</option>
+              <option value="40">40분</option>
+              <option value="50">50분</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 막수 -->
+        <div class="input-box">
+          <label class="input-title">
+            <span class="dot-last"></span>
+            막수 시간 (저녁)
+          </label>
+          <div class="select-group">
+            <select id="lastH" class="dropdown" onchange="calculateSchedule()" aria-label="막수 시">
+              <option value="18">저녁 06시 (18시)</option>
+              <option value="19">저녁 07시 (19시)</option>
+              <option value="20">저녁 08시 (20시)</option>
+              <option value="21" selected>저녁 09시 (21시)</option>
+              <option value="22">밤 10시 (22시)</option>
+              <option value="23">밤 11시 (23시)</option>
+            </select>
+            <span class="colon">:</span>
+            <select id="lastM" class="dropdown" onchange="calculateSchedule()" aria-label="막수 분">
+              <option value="0">00분</option>
+              <option value="10">10분</option>
+              <option value="20">20분</option>
+              <option value="30" selected>30분</option>
+              <option value="40">40분</option>
+              <option value="50">50분</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 플랜 모드 탭 -->
+      <div class="tab-group">
+        <button type="button" class="tab-btn active" id="tab5Btn" onclick="setMode(5)">
+          5회 수유 (추천·800ml)
+        </button>
+        <button type="button" class="tab-btn" id="tab4Btn" onclick="setMode(4)">
+          4회 수유 (780ml)
+        </button>
+      </div>
+
+      <!-- 보조 버튼들 -->
+      <div class="action-row">
+        <button type="button" class="btn" onclick="openTempModal()">
+          🌡️ 45℃ 물 배합표
+        </button>
+        <button type="button" class="btn btn-primary" onclick="copySchedule()">
+          📋 스케줄 복사
+        </button>
+      </div>
+    </section>
+
+    <!-- 요약 대시보드 -->
+    <section class="summary-card">
+      <div class="summary-item">
+        <div class="summary-label">하루 총 수유량</div>
+        <div class="summary-value" id="dispTotalMl">800 ml</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">평균 수유 텀</div>
+        <div class="summary-value" id="dispInterval">3시간 15분</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">예상 밤잠 시간</div>
+        <div class="summary-value" id="dispNightSleep">11시간</div>
+      </div>
+    </section>
+
+    <!-- 타임라인 리스트 -->
+    <section>
+      <div class="timeline-title-row" style="margin-bottom: 10px;">
+        <h2>오늘의 수유 타임라인</h2>
+        <span class="badge-info" id="planBadge">40ml 스푼 단위 맞춤</span>
+      </div>
+
+      <div class="timeline-list" id="timelineList">
+        <!-- JS로 실시간 생성 -->
+      </div>
+    </section>
+
+    <!-- 소화 및 밤잠 팁 박스 -->
+    <section class="info-box">
+      <div class="info-box-title">
+        💡 수유 & 밤잠 체크포인트
+      </div>
+      <ul>
+        <li><strong>트림 후 세워안기:</strong> 트림을 했더라도 위 괄약근 미숙으로 게울 수 있으니 10~15분은 품에 세워 안아주세요.</li>
+        <li><strong>막수 전 공복 확보:</strong> 막수(200ml) 3시간 전 수유(저녁)는 120ml로 가볍게 끝내야 막수를 남기지 않고 통잠을 잡니다.</li>
+        <li><strong>아침 손발 체온:</strong> 기상 직후 손이 차가운 것은 정상적인 혈관 수축입니다. 목 뒤가 따뜻하면 아기는 춥지 않습니다.</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <!-- 물 온도 혼합 팝업 모달 -->
+  <div class="modal-overlay" id="tempModal" onclick="handleModalOverlayClick(event)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">🌡️ 45℃ 분유물 배합 가이드</h3>
+        <button type="button" class="close-btn" onclick="closeTempModal()">✕</button>
+      </div>
+
+      <p style="font-size: 12px; color: #718096; line-height: 1.5;">
+        <strong>75℃ 물</strong>(끓여 식힌 온수)과 <strong>40℃ 물</strong>(식힌 물)을 섞어 아기가 편안하게 먹는 45℃를 만듭니다.
+      </p>
+
+      <table class="temp-table">
+        <thead>
+          <tr>
+            <th>조제 목표량</th>
+            <th class="temp-hot">75℃ 온수</th>
+            <th class="temp-warm">40℃ 미온수</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>120 ml</strong> (3스푼)</td>
+            <td class="temp-hot">18 ml</td>
+            <td class="temp-warm">102 ml</td>
+          </tr>
+          <tr>
+            <td><strong>160 ml</strong> (4스푼)</td>
+            <td class="temp-hot">23 ml</td>
+            <td class="temp-warm">137 ml</td>
+          </tr>
+          <tr>
+            <td><strong>200 ml</strong> (5스푼)</td>
+            <td class="temp-hot">29 ml</td>
+            <td class="temp-warm">171 ml</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="background: #F8F5F0; border-radius: 10px; padding: 10px; font-size: 11px; color: #665C54;">
+        TIP: 75℃ 물을 젖병 눈금에 먼저 맞춘 후, 40℃ 물을 부어 목표 총량 선까지 맞추면 쉽습니다.
+      </div>
+
+      <button type="button" class="btn btn-primary" style="width: 100%;" onclick="closeTempModal()">
+        확인했습니다
+      </button>
+    </div>
+  </div>
+
+  <!-- 안내 토스트 -->
+  <div class="toast" id="toast">복사되었습니다!</div>
+
+  <script>
+    // 상태 변수
+    let currentMode = 5;
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('tab5Btn').className = mode === 5 ? 'tab-btn active' : 'tab-btn';
+      document.getElementById('tab4Btn').className = mode === 4 ? 'tab-btn active' : 'tab-btn';
+      document.getElementById('planBadge').innerText = mode === 5 ? '40ml 스푼 단위 맞춤' : '4회 든든 모드';
+      calculateSchedule();
+    }
+
+    function timeToMinutes(h, m) {
+      return parseInt(h, 10) * 60 + parseInt(m, 10);
+    }
+
+    function minutesToTime(mins) {
+      const normalized = (Math.round(mins) + 1440) % 1440;
+      const h = Math.floor(normalized / 60);
+      const m = normalized % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function formatDuration(mins) {
+      const h = Math.floor(mins / 60);
+      const m = Math.round(mins % 60);
+      if (h <= 0) return `${m}분`;
+      if (m <= 0) return `${h}시간`;
+      return `${h}시간 ${m}분`;
+    }
+
+    // 스케줄 계산 및 렌더링
+    function calculateSchedule() {
+      const fH = document.getElementById('firstH').value;
+      const fM = document.getElementById('firstM').value;
+      const lH = document.getElementById('lastH').value;
+      const lM = document.getElementById('lastM').value;
+
+      const startMin = timeToMinutes(fH, fM);
+      let endMin = timeToMinutes(lH, lM);
+
+      let activeDayMin = endMin - startMin;
+      if (activeDayMin <= 0) {
+        activeDayMin += 1440; // 자정 넘김 안전장치
+      }
+
+      const nightSleepMin = 1440 - activeDayMin;
+
+      let items = [];
+
+      if (currentMode === 5) {
+        // 5회 플랜: 200 - 120 - 160 - 120 - 200 (총 800ml)
+        const step = activeDayMin / 4;
+        items = [
+          { name: '1회 (첫수)', time: startMin, ml: 200, spoons: '5스푼', desc: '밤새 공복 후 든든한 첫 식사', hl: true },
+          { name: '2회', time: startMin + step, ml: 120, spoons: '3스푼', desc: '첫수 소화 배려 가벼운 보충', hl: false },
+          { name: '3회', time: startMin + step * 2, ml: 160, spoons: '4스푼', desc: '낮 시간대 메인 수유', hl: false },
+          { name: '4회', time: startMin + step * 3, ml: 120, spoons: '3스푼', desc: '막수를 위한 가벼운 수유 (필수)', hl: false },
+          { name: '5회 (막수)', time: endMin, ml: 200, spoons: '5스푼', desc: '밤잠 통잠용 든든한 막수', hl: true }
+        ];
+      } else {
+        // 4회 플랜: 200 - 200 - 200 - 200 (총 800ml)
+        const step = activeDayMin / 3;
+        items = [
+          { name: '1회 (첫수)', time: startMin, ml: 200, spoons: '5스푼', desc: '밤새 공복 후 든든한 첫 식사', hl: true },
+          { name: '2회', time: startMin + step, ml: 200, spoons: '5스푼', desc: '점심 든든한 수유', hl: false },
+          { name: '3회', time: startMin + step * 2, ml: 200, spoons: '5스푼', desc: '늦은 오후 수유', hl: false },
+          { name: '4회 (막수)', time: endMin, ml: 200, spoons: '5스푼', desc: '밤잠 통잠용 든든한 막수', hl: true }
+        ];
+      }
+
+      // 대시보드 업데이트
+      const totalMl = items.reduce((acc, cur) => acc + cur.ml, 0);
+      document.getElementById('dispTotalMl').innerText = `${totalMl} ml`;
+      document.getElementById('dispInterval').innerText = formatDuration(activeDayMin / (items.length - 1));
+      document.getElementById('dispNightSleep').innerText = formatDuration(nightSleepMin);
+
+      // 타임라인 리스트 렌더링
+      const listEl = document.getElementById('timelineList');
+      listEl.innerHTML = '';
+
+      items.forEach((item, idx) => {
+        const timeStr = minutesToTime(item.time);
+        let intervalBadge = '';
+        if (idx > 0) {
+          const diff = item.time - items[idx - 1].time;
+          intervalBadge = `<span class="feed-interval">${formatDuration(diff)} 후</span>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = item.hl ? 'feed-card highlight' : 'feed-card';
+        card.innerHTML = `
+          <div class="feed-left">
+            <div class="round-num">${idx + 1}</div>
+            <div class="feed-details">
+              <div class="feed-time-wrap">
+                <span class="feed-time">${timeStr}</span>
+                <span class="feed-name">${item.name}</span>
+                ${intervalBadge}
+              </div>
+              <span class="feed-desc">${item.desc}</span>
+            </div>
+          </div>
+          <div class="feed-right">
+            <div class="feed-amount">${item.ml} <span>ml</span></div>
+            <div class="feed-spoons">${item.spoons}</div>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    // 클립보드 복사
+    function copySchedule() {
+      const totalMl = document.getElementById('dispTotalMl').innerText;
+      const interval = document.getElementById('dispInterval').innerText;
+      
+      let text = `🍼 [아기 오늘의 수유 스케줄]\n`;
+      text += `• 플랜: ${currentMode}회 수유 (목표 ${totalMl})\n`;
+      text += `• 평균 간격: 약 ${interval}\n`;
+      text += `---------------------------\n`;
+
+      const cards = document.querySelectorAll('#timelineList .feed-card');
+      cards.forEach((c) => {
+        const time = c.querySelector('.feed-time').innerText;
+        const name = c.querySelector('.feed-name').innerText;
+        const amount = c.querySelector('.feed-amount').innerText.replace(/\s+/g, '');
+        const spoons = c.querySelector('.feed-spoons').innerText;
+        text += `${name} | ${time} | ${amount} (${spoons})\n`;
+      });
+
+      text += `---------------------------\n`;
+      text += `💡 수유 후 10~15분 세워 안아주고 눕히기!`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('스케줄이 복사되었습니다!');
+        }).catch(() => {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(str) {
+      const el = document.createElement('textarea');
+      el.value = str;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand('copy');
+        showToast('스케줄이 복사되었습니다!');
+      } catch (err) {
+        showToast('텍스트 복사를 지원하지 않는 브라우저입니다.');
+      }
+      document.body.removeChild(el);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // 물 온도 모달 제어
+    function openTempModal() {
+      document.getElementById('tempModal').classList.add('open');
+    }
+
+    function closeTempModal() {
+      document.getElementById('tempModal').classList.remove('open');
+    }
+
+    function handleModalOverlayClick(e) {
+      if (e.target.id === 'tempModal') {
+        closeTempModal();
+      }
+    }
+
+    // 페이지 진입 즉시 계산 실행
+    window.onload = function() {
+      calculateSchedule();
+    };
+  </script>
+</body>
+</html>
