@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>수유 스케줄 계산기</title>
+  <style>
+    :root {
+      --bg-page: #F5F7FA;
+      --card-bg: #FFFFFF;
+      --primary-blue: #2B78E4;
+      --primary-blue-light: #EBF3FE;
+      --primary-blue-hover: #1E63C4;
+      --navy-dark: #191F28;
+      --gray-text: #4E5968;
+      --gray-sub: #8B95A1;
+      --gray-line: #E5E8EB;
+      --gray-track: #ECEEF2;
+      --border-card: #ECEFF3;
+      --shadow-card: 0 4px 16px rgba(0, 20, 50, 0.04);
+      --shadow-btn: 0 4px 12px rgba(43, 120, 228, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--navy-dark);
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+      line-height: 1.45;
+      padding: 16px 14px 40px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .app-wrap {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 1. 시간 설정 카드 (가장 최상단 배치) */
+    .setting-card {
+      background: var(--card-bg);
+      border-radius: 22px;
+      padding: 18px 16px;
+      border: 1px solid var(--border-card);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .setting-header {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy-dark);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .guide-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      background: var(--primary-blue-light);
+      padding: 3px 8px;
+      border-radius: 10px;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .input-group {
+      background: #F8FAFD;
+      border: 1.5px solid #E5EBF4;
+      border-radius: 16px;
+      padding: 10px 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-text);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dot-blue { width: 7px; height: 7px; border-radius: 50%; background: var(--primary-blue); }
+    .dot-gray { width: 7px; height: 7px; border-radius: 50%; background: var(--navy-dark); }
+
+    .dropdown-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .clean-select {
+      flex: 1;
+      height: 42px;
+      background: #FFFFFF;
+      border: 1px solid #DCE3EE;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--navy-dark);
+      padding: 0 4px;
+      text-align: center;
+      outline: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .clean-select:focus {
+      border-color: var(--primary-blue);
+    }
+
+    .colon-text {
+      font-weight: 800;
+      color: #9AA6B8;
+      font-size: 16px;
+    }
+
+    /* 2. 세그먼트 모드 탭 (시간 설정 바로 아래) */
+    .tab-segmented {
+      display: flex;
+      background: var(--card-bg);
+      border-radius: 18px;
+      padding: 4px;
+      border: 1px solid var(--border-card);
+      box-shadow: var(--shadow-card);
+    }
+
+    .tab-item {
+      flex: 1;
+      height: 44px;
+      border: none;
+      background: transparent;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gray-sub);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-item.active {
+      background: var(--primary-blue);
+      color: #FFFFFF;
+      box-shadow: 0 3px 10px rgba(43, 120, 228, 0.28);
+    }
+
+    /* 상단 스텝 진행도 카드 */
+    .step-track-box {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px 14px 14px;
+      border: 1px solid var(--border-card);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .steps-row {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      padding: 0 8px;
+    }
+
+    .steps-row::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      height: 4px;
+      background: var(--gray-track);
+      z-index: 1;
+    }
+
+    .step-node {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .step-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 3px solid var(--gray-line);
+      color: var(--gray-sub);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      transition: all 0.25s ease;
+    }
+
+    .step-node.done .step-circle {
+      background: var(--primary-blue);
+      border-color: var(--primary-blue);
+      color: #FFFFFF;
+      box-shadow: 0 3px 8px rgba(43, 120, 228, 0.3);
+    }
+
+    .step-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-sub);
+    }
+
+    .step-node.done .step-label {
+      color: var(--primary-blue);
+    }
+
+    /* 진행도 바 */
+    .progress-box {
+      background: #F8FAFD;
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1px solid #EDF1F7;
+    }
+
+    .progress-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy-dark);
+    }
+
+    .progress-fraction {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--primary-blue);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: var(--gray-track);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #2B78E4 0%, #468DF2 100%);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    /* 타임라인 피드 */
+    .timeline-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .timeline-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 6px 0;
+    }
+
+    .timeline-head h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--navy-dark);
+    }
+
+    .feed-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid var(--border-card);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .feed-card.completed {
+      background: #FAFCFE;
+      border-color: #D2E4FC;
+    }
+
+    .feed-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .feed-badge-round {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: #F1F4F9;
+      color: var(--gray-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .feed-card.completed .feed-badge-round {
+      background: var(--primary-blue-light);
+      color: var(--primary-blue);
+    }
+
+    .feed-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .feed-time-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .feed-time {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--navy-dark);
+      letter-spacing: -0.3px;
+    }
+
+    .feed-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #F2F4F7;
+      color: var(--gray-sub);
+    }
+
+    .feed-card.completed .feed-tag {
+      background: var(--primary-blue-light);
+      color: var(--primary-blue);
+    }
+
+    .feed-desc {
+      font-size: 12px;
+      color: var(--gray-sub);
+    }
+
+    .feed-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .feed-amount {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--navy-dark);
+    }
+
+    .feed-amount span {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-sub);
+    }
+
+    .check-btn {
+      border: none;
+      background: #F2F4F7;
+      color: var(--gray-sub);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.2s ease;
+    }
+
+    .check-btn.checked {
+      background: var(--navy-dark);
+      color: #FFFFFF;
+    }
+
+    /* 하단 복사 버튼 */
+    .action-group {
+      margin-top: 4px;
+    }
+
+    .btn-main {
+      width: 100%;
+      height: 52px;
+      background: var(--primary-blue);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      box-shadow: var(--shadow-btn);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .btn-main:active {
+      background: var(--primary-blue-hover);
+    }
+
+    /* 토스트 알림 */
+    .toast-msg {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(25, 31, 40, 0.92);
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
+    .toast-msg.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrap">
+    <!-- 1. 최상단: 시간 설정 카드 -->
+    <section class="setting-card">
+      <div class="setting-header">
+        <span>시간 설정</span>
+        <span class="guide-tag">10분 단위 설정</span>
+      </div>
+
+      <div class="time-grid">
+        <!-- 첫수 -->
+        <div class="input-group">
+          <label class="input-label">
+            <span class="dot-blue"></span>
+            첫수 (아침)
+          </label>
+          <div class="dropdown-row">
+            <select id="selFirstH" class="clean-select" onchange="recalculate()">
+              <option value="05">05시</option>
+              <option value="06">06시</option>
+              <option value="07">07시</option>
+              <option value="08">08시</option>
+              <option value="09" selected>09시</option>
+              <option value="10">10시</option>
+            </select>
+            <span class="colon-text">:</span>
+            <select id="selFirstM" class="clean-select" onchange="recalculate()">
+              <option value="0" selected>00분</option>
+              <option value="10">10분</option>
+              <option value="20">20분</option>
+              <option value="30">30분</option>
+              <option value="40">40분</option>
+              <option value="50">50분</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 막수 -->
+        <div class="input-group">
+          <label class="input-label">
+            <span class="dot-gray"></span>
+            막수 (밤잠 전)
+          </label>
+          <div class="dropdown-row">
+            <select id="selLastH" class="clean-select" onchange="recalculate()">
+              <option value="19">19시</option>
+              <option value="20">20시</option>
+              <option value="21" selected>21시</option>
+              <option value="22">22시</option>
+              <option value="23">23시</option>
+            </select>
+            <span class="colon-text">:</span>
+            <select id="selLastM" class="clean-select" onchange="recalculate()">
+              <option value="0">00분</option>
+              <option value="10">10분</option>
+              <option value="20">20분</option>
+              <option value="30" selected>30분</option>
+              <option value="40">40분</option>
+              <option value="50">50분</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 세그먼트 모드 탭 (시간 설정 바로 아래) -->
+    <div class="tab-segmented">
+      <button type="button" class="tab-item active" id="tab5" onclick="changeMode(5)">
+        5회 스케줄 (추천·800ml)
+      </button>
+      <button type="button" class="tab-item" id="tab4" onclick="changeMode(4)">
+        4회 스케줄 (800ml)
+      </button>
+    </div>
+
+    <!-- 3. 상단 스텝 진행도 카드 -->
+    <section class="step-track-box">
+      <div class="steps-row" id="stepsBar"></div>
+
+      <div class="progress-box">
+        <div class="progress-top-row">
+          <span class="progress-title">오늘 수유 달성도</span>
+          <span class="progress-fraction" id="progressText">0ml / 800ml</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 수유 타임라인 카드 리스트 -->
+    <section class="timeline-wrap">
+      <div class="timeline-head">
+        <h2>수유 타임라인</h2>
+        <span style="font-size: 12px; font-weight: 700; color: var(--gray-sub);" id="intervalNotice">평균 텀 약 3시간 10분</span>
+      </div>
+
+      <div id="timelineContainer" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </section>
+
+    <!-- 5. 하단 복사 버튼 -->
+    <div class="action-group">
+      <button type="button" class="btn-main" onclick="copySchedule()">
+        📋 스케줄 텍스트 복사하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 안내 토스트 -->
+  <div class="toast-msg" id="toastMsg">스케줄이 복사되었습니다!</div>
+
+  <script>
+    var currentMode = 5;
+    var completedSteps = [false, false, false, false, false];
+
+    function changeMode(mode) {
+      currentMode = mode;
+      document.getElementById('tab5').className = mode === 5 ? 'tab-item active' : 'tab-item';
+      document.getElementById('tab4').className = mode === 4 ? 'tab-item active' : 'tab-item';
+      completedSteps = mode === 5 ? [false, false, false, false, false] : [false, false, false, false];
+      recalculate();
+    }
+
+    function timeToMinutes(h, m) {
+      return (parseInt(h, 10) || 0) * 60 + (parseInt(m, 10) || 0);
+    }
+
+    function minutesToTime(mins) {
+      var normalized = (Math.round(mins) + 1440) % 1440;
+      var h = Math.floor(normalized / 60);
+      var m = normalized % 60;
+      var hh = h < 10 ? '0' + h : '' + h;
+      var mm = m < 10 ? '0' + m : '' + m;
+      return hh + ':' + mm;
+    }
+
+    function formatDuration(mins) {
+      var rounded = Math.round(mins);
+      var h = Math.floor(rounded / 60);
+      var m = rounded % 60;
+      if (h <= 0) return m + '분';
+      if (m <= 0) return h + '시간';
+      return h + '시간 ' + m + '분';
+    }
+
+    function toggleStep(idx) {
+      completedSteps[idx] = !completedSteps[idx];
+      renderStepsAndProgress();
+      renderTimelineOnly();
+    }
+
+    var cachedItems = [];
+
+    function recalculate() {
+      try {
+        var startH = document.getElementById('selFirstH').value;
+        var startM = document.getElementById('selFirstM').value;
+        var endH = document.getElementById('selLastH').value;
+        var endM = document.getElementById('selLastM').value;
+
+        var startMin = timeToMinutes(startH, startM);
+        var endMin = timeToMinutes(endH, endM);
+
+        var activeMin = endMin - startMin;
+        if (activeMin <= 0) activeMin += 1440;
+
+        var items = [];
+        if (currentMode === 5) {
+          var step5 = activeMin / 4;
+          items = [
+            { name: '1회 (첫수)', time: startMin, ml: 200, spoons: '5스푼', desc: '공복 후 든든한 시작' },
+            { name: '2회', time: startMin + step5, ml: 120, spoons: '3스푼', desc: '소화 배려 가벼운 보충' },
+            { name: '3회', time: startMin + step5 * 2, ml: 160, spoons: '4스푼', desc: '낮 메인 식사' },
+            { name: '4회', time: startMin + step5 * 3, ml: 120, spoons: '3스푼', desc: '막수를 위한 가벼운 수유' },
+            { name: '5회 (막수)', time: endMin, ml: 200, spoons: '5스푼', desc: '통잠용 든든한 막수' }
+          ];
+        } else {
+          var step4 = activeMin / 3;
+          items = [
+            { name: '1회 (첫수)', time: startMin, ml: 200, spoons: '5스푼', desc: '공복 후 든든한 시작' },
+            { name: '2회', time: startMin + step4, ml: 200, spoons: '5스푼', desc: '점심 든든한 수유' },
+            { name: '3회', time: startMin + step4 * 2, ml: 200, spoons: '5스푼', desc: '오후 든든한 수유' },
+            { name: '4회 (막수)', time: endMin, ml: 200, spoons: '5스푼', desc: '통잠용 든든한 막수' }
+          ];
+        }
+
+        cachedItems = items;
+        var intervalMin = activeMin / (items.length - 1);
+        var intervalNotice = document.getElementById('intervalNotice');
+        if (intervalNotice) {
+          intervalNotice.innerText = '평균 텀 약 ' + formatDuration(intervalMin);
+        }
+
+        renderStepsAndProgress();
+        renderTimelineOnly();
+      } catch (err) {
+        console.error('계산 오류:', err);
+      }
+    }
+
+    function renderStepsAndProgress() {
+      var stepsBar = document.getElementById('stepsBar');
+      var totalMl = 0;
+      var currentMl = 0;
+
+      for (var i = 0; i < cachedItems.length; i++) {
+        totalMl += cachedItems[i].ml;
+        if (completedSteps[i]) {
+          currentMl += cachedItems[i].ml;
+        }
+      }
+
+      var stepHtml = '';
+      for (var s = 0; s < cachedItems.length; s++) {
+        var isDone = completedSteps[s];
+        stepHtml += '<div class="step-node ' + (isDone ? 'done' : '') + '" onclick="toggleStep(' + s + ')">' +
+          '<div class="step-circle">' + (isDone ? '✓' : (s + 1)) + '</div>' +
+          '<span class="step-label">' + (s + 1) + '회</span>' +
+        '</div>';
+      }
+      if (stepsBar) stepsBar.innerHTML = stepHtml;
+
+      var progressText = document.getElementById('progressText');
+      var progressFill = document.getElementById('progressFill');
+      var percent = totalMl > 0 ? Math.round((currentMl / totalMl) * 100) : 0;
+
+      if (progressText) progressText.innerText = currentMl + 'ml / ' + totalMl + 'ml';
+      if (progressFill) progressFill.style.width = percent + '%';
+    }
+
+    function renderTimelineOnly() {
+      var container = document.getElementById('timelineContainer');
+      if (!container) return;
+
+      var html = '';
+      for (var i = 0; i < cachedItems.length; i++) {
+        var itm = cachedItems[i];
+        var isDone = completedSteps[i];
+        var timeStr = minutesToTime(itm.time);
+
+        html += '<div class="feed-card ' + (isDone ? 'completed' : '') + '">' +
+          '<div class="feed-left">' +
+            '<div class="feed-badge-round">' + (i + 1) + '</div>' +
+            '<div class="feed-info">' +
+              '<div class="feed-time-line">' +
+                '<span class="feed-time">' + timeStr + '</span>' +
+                '<span class="feed-tag">' + itm.name + '</span>' +
+              '</div>' +
+              '<span class="feed-desc">' + itm.desc + ' (' + itm.spoons + ')</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="feed-right">' +
+            '<div class="feed-amount">' + itm.ml + ' <span>ml</span></div>' +
+            '<button type="button" class="check-btn ' + (isDone ? 'checked' : '') + '" onclick="toggleStep(' + i + ')">' +
+              (isDone ? '완료됨' : '수유 완료') +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function copySchedule() {
+      var startH = document.getElementById('selFirstH').value;
+      var startM = document.getElementById('selFirstM').value;
+      var endH = document.getElementById('selLastH').value;
+      var endM = document.getElementById('selLastM').value;
+
+      var text = '🍼 수유 스케줄 (' + currentMode + '회 모드)\n';
+      text += '• 첫수: ' + startH + ':' + startM + ' | 막수: ' + endH + ':' + endM + '\n';
+      text += '---------------------------\n';
+
+      for (var i = 0; i < cachedItems.length; i++) {
+        var itm = cachedItems[i];
+        var doneMark = completedSteps[i] ? ' [완료]' : '';
+        text += (i + 1) + '회 (' + minutesToTime(itm.time) + ') : ' + itm.ml + 'ml (' + itm.spoons + ')' + doneMark + '\n';
+      }
+
+      fallbackCopy(text);
+    }
+
+    function fallbackCopy(str) {
+      var el = document.createElement('textarea');
+      el.value = str;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand('copy');
+        showToast('스케줄이 복사되었습니다!');
+      } catch (e) {
+        showToast('복사에 실패했습니다.');
+      }
+      document.body.removeChild(el);
+    }
+
+    function showToast(msg) {
+      var t = document.getElementById('toastMsg');
+      if (!t) return;
+      t.innerText = msg;
+      t.classList.add('show');
+      setTimeout(function() {
+        t.classList.remove('show');
+      }, 2000);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', recalculate);
+    } else {
+      recalculate();
+    }
+  </script>
+</body>
+</html>
